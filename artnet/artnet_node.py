@@ -44,10 +44,8 @@ class ArtNetNode(object):
         led_strip_dict = self._history_led_strip_builder(slot_color)
 
         for entry in led_strip_dict:
-            self._sequenzer()
-            self.send_queue.append(ArtNetDMXPacket(PacketType.ART_DMX, self.sequence, 0, int(entry),
-                                                   led_strip_dict[
-                                                       entry].to_byte_array()).packet_to_byte_array())
+            self._send_packet(entry, led_strip_dict[entry])
+
         if len(slot_color) > 0:
             return True
         else:
@@ -67,9 +65,7 @@ class ArtNetNode(object):
             led_strip_dict = self._history_led_strip_builder(slot_history)
 
             for entry in led_strip_dict:
-                self._sequenzer()
-                self.send_queue.append(ArtNetDMXPacket(PacketType.ART_DMX, self.sequence, 0, int(entry),
-                                                       led_strip_dict[entry].to_byte_array()).packet_to_byte_array())
+                self._send_packet(entry, led_strip_dict[entry])
 
             if coll_history:
                 if slot_name in self.slot_history:
@@ -89,7 +85,7 @@ class ArtNetNode(object):
 
     def illuminate_slot_dont_coll_history(self, slot_name, color):
         """Illuminates the given slot but don't add it to the history of illuminated slots"""
-        self.illuminate_slot(slot_name, color, 0, False)
+        return self.illuminate_slot(slot_name, color, 0, False)
 
     def illuminate_slot_dont_coll_history_opcua_call(self, parent, slot_name, color):
         """Only use this method for calls from python-opcua"""
@@ -124,9 +120,7 @@ class ArtNetNode(object):
                 c.green = green
                 c.blue = blue
 
-            self._sequenzer()
-            self.send_queue.append(ArtNetDMXPacket(PacketType.ART_DMX, self.sequence, 0, int(universe),
-                                                   tmp_led_strip.to_byte_array()).packet_to_byte_array())
+            self._send_packet(universe, tmp_led_strip)
             return True
         else:
             return False
@@ -144,9 +138,7 @@ class ArtNetNode(object):
             for c in tmp_led_strip.led_strip:
                 c.set_color(color)
 
-            self._sequenzer()
-            self.send_queue.append(ArtNetDMXPacket(PacketType.ART_DMX, self.sequence, 0, int(universe),
-                                                   tmp_led_strip.to_byte_array()).packet_to_byte_array())
+            self._send_packet(universe, tmp_led_strip)
         return True
 
     def illuminate_all_opcua_call(self, parent, color):
@@ -175,9 +167,7 @@ class ArtNetNode(object):
                     tmp_led_strip.led_strip[i].green = green
                     tmp_led_strip.led_strip[i].blue = blue
 
-                self._sequenzer()
-                self.send_queue.append(ArtNetDMXPacket(PacketType.ART_DMX, self.sequence, 0, int(universe),
-                                                       tmp_led_strip.to_byte_array()).packet_to_byte_array())
+                self._send_packet(universe, tmp_led_strip)
                 return True
             else:
                 return False
@@ -197,9 +187,7 @@ class ArtNetNode(object):
         for universe in self.universe:
             tmp_led_strip = copy.deepcopy(self.universe.get(universe))
 
-            self._sequenzer()
-            self.send_queue.append(ArtNetDMXPacket(PacketType.ART_DMX, self.sequence, 0, int(universe),
-                                                   tmp_led_strip.to_byte_array()).packet_to_byte_array())
+            self._send_packet(universe, tmp_led_strip)
         return True
 
     def all_off_opcua_call(self, parent):
@@ -214,14 +202,14 @@ class ArtNetNode(object):
 
     def _history_builder(self, slot_name, color, history_to_illu):
         """Build history of slots that have to be illuminated"""
+        history_to_build = {}
         slot_area, slot_num = map(int, str(slot_name).split('.'))
         tmp_slot_history = copy.deepcopy(self.slot_history)
+
         if slot_name in tmp_slot_history:
             tmp_slot_history.remove(slot_name)
-        history_to_build = {}
         if len(self.color_history) < self._max_history_size:
-            dif = self._max_history_size - len(self.color_history)
-            for i in range(dif):
+            for i in range(self._max_history_size - len(self.color_history)):
                 self.color_history.append('red')
 
         if len(tmp_slot_history) < history_to_illu:
@@ -236,8 +224,10 @@ class ArtNetNode(object):
     def _history_led_strip_builder(self, slot_history):
         """Needs a slot_history dict from _history_builder to build LEDStrips that can be send"""
         led_strip_dict = {}
+
         for universe in self.universe:
             led_strip_dict[universe] = copy.deepcopy(self.universe.get(universe))
+
         for slot in slot_history:
             slot_area, slot_num = map(int, str(slot).split('.'))
             universe = self.slots.get(slot_area).get('universe')
@@ -252,12 +242,17 @@ class ArtNetNode(object):
 
         return led_strip_dict
 
-    def _sequenzer(self):
+    def _send_packet(self, universe, led_strip):
         if self.sequence < 255:
             self.sequence += 1
         else:
             self.sequence = 1
-        return self.sequence
+
+        self.send_queue.append(ArtNetDMXPacket(PacketType.ART_DMX,
+                                               self.sequence,
+                                               0,
+                                               int(universe),
+                                               led_strip.to_byte_array()).packet_to_byte_array())
 
 
 class LEDStrip(object):
