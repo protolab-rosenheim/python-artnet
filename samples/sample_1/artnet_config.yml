@@ -10,5 +10,8 @@ artnet_node_1:
   universe_1: 98
   universe_3: 75
   universe_5: 88
-  color_history: "yellow,orange,red"
+  color_history:
+    - "yellow"
+    - "orange"
+    - "red"
   max_history_size: 5

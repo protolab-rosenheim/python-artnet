@@ -59,41 +59,11 @@ class ArtNetNode(object):
         ret = self.illuminate_multiple_slots(slot_name.Value, color.Value)
         return [ua.Variant(ret, ua.VariantType.Boolean)]
 
-    def illuminate_slot(self, slot_name, color):
+    def illuminate_slot(self, slot_name, color, history_to_illu, coll_history):
         """Illuminates a slot and adds it to the illuminated slots history"""
-        return self.illuminate_slot_with_history(slot_name, color, 0)
+        slot_area, slot_num = map(int, str(slot_name).split('.'))
 
-    def illuminate_slot_dont_coll_history(self, slot_name, color):
-        """Illuminates the given slot but don't add it to the history of illuminated slots"""
-        slot = 'slot_' + str(slot_name)
-        if self.slots.get(slot) and Color.colors.get(color):
-            led_strip_dict = self._history_led_strip_builder({slot: color})
-
-            for entry in led_strip_dict:
-                self._sequenzer()
-                self.send_queue.append(ArtNetDMXPacket(PacketType.ART_DMX, self.sequence, 0, int(entry),
-                                                       led_strip_dict[entry].to_byte_array()).packet_to_byte_array())
-            return True
-        else:
-            return False
-
-    def illuminate_slot_dont_coll_history_opcua_call(self, parent, slot_name, color):
-        """Only use this method for calls from python-opcua"""
-        from opcua import ua
-        ret = self.illuminate_slot_dont_coll_history(slot_name.Value, color.Value)
-        return [ua.Variant(ret, ua.VariantType.Boolean)]
-
-    def illuminate_slot_opcua_call(self, parent, slot_name, color):
-        """Only use this method for calls from python-opcua"""
-        from opcua import ua
-        ret = self.illuminate_slot_with_history(slot_name.Value, color.Value, 0)
-        return [ua.Variant(ret, ua.VariantType.Boolean)]
-
-    def illuminate_slot_with_history(self, slot_name, color, history_to_illu):
-        slot = 'slot_' + str(slot_name)
-
-        if self.slots.get(slot) and Color.colors.get(color):
-
+        if self.slots[slot_area]['led'][slot_num] and Color.colors.get(color):
             slot_history = self._history_builder(slot_name, color, history_to_illu)
             led_strip_dict = self._history_led_strip_builder(slot_history)
 
@@ -102,20 +72,41 @@ class ArtNetNode(object):
                 self.send_queue.append(ArtNetDMXPacket(PacketType.ART_DMX, self.sequence, 0, int(entry),
                                                        led_strip_dict[entry].to_byte_array()).packet_to_byte_array())
 
-            if slot in self.slot_history:
-                self.slot_history.remove(slot)
-            self.slot_history.insert(0, slot)
-            if len(self.slot_history) > self._max_history_size:
-                self.slot_history.pop()
+            if coll_history:
+                if slot_name in self.slot_history:
+                    self.slot_history.remove(slot_name)
+                self.slot_history.insert(0, slot_name)
+                if len(self.slot_history) > self._max_history_size:
+                    self.slot_history.pop()
 
             return True
         else:
             return False
 
+    def illuminate_slot_opcua_call(self, parent, slot_name, color):
+        """Only use this method for calls from python-opcua"""
+        from opcua import ua
+        ret = self.illuminate_slot(slot_name.Value, color.Value, 0, True)
+        return [ua.Variant(ret, ua.VariantType.Boolean)]
+
+    def illuminate_slot_dont_coll_history(self, slot_name, color):
+        """Illuminates the given slot but don't add it to the history of illuminated slots"""
+        self.illuminate_slot(slot_name, color, 0, False)
+
+    def illuminate_slot_dont_coll_history_opcua_call(self, parent, slot_name, color):
+        """Only use this method for calls from python-opcua"""
+        from opcua import ua
+        return [ua.Variant(self.illuminate_slot(slot_name.Value, color.Value, 0, False), ua.VariantType.Boolean)]
+
+    def illuminate_slot_with_history(self, slot_name, color, history_to_illu):
+        self.illuminate_slot(slot_name, color, history_to_illu, True)
+
     def illuminate_slot_with_history_opcua_call(self, parent, slot_name, color, history_to_illu):
         from opcua import ua
-        ret = self.illuminate_slot_with_history(slot_name.Value, color.Value, history_to_illu.Value)
-        return [ua.Variant(ret, ua.VariantType.Boolean)]
+        return [ua.Variant(self.illuminate_slot(slot_name.Value,
+                                                color.Value,
+                                                history_to_illu.Value,
+                                                True),ua.VariantType.Boolean)]
 
     def illuminate_universe(self, universe, color):
         if self.universe.get(universe):
@@ -240,20 +231,12 @@ class ArtNetNode(object):
             led_strip.led_strip[i].set_color(color)
         return led_strip
 
-    def _extract_start_end_led(self, slot):
-        """Returns start and end led from a given slot"""
-        leds = self.slots.get(slot).get('led')
-        led_split = leds.split('-')
-        start_led = int(led_split[0])
-        end_led = int(led_split[1])
-        return start_led, end_led
-
     def _history_builder(self, slot_name, color, history_to_illu):
         """Build history of slots that have to be illuminated"""
-        slot = 'slot_' + str(slot_name)
+        slot_area, slot_num = map(int, str(slot_name).split('.'))
         tmp_slot_history = copy.deepcopy(self.slot_history)
-        if slot in tmp_slot_history:
-            tmp_slot_history.remove(slot)
+        if slot_name in tmp_slot_history:
+            tmp_slot_history.remove(slot_name)
         history_to_build = {}
         if len(self.color_history) < self._max_history_size:
             dif = self._max_history_size - len(self.color_history)
@@ -265,8 +248,8 @@ class ArtNetNode(object):
         for i in range(history_to_illu):
             history_to_build[tmp_slot_history[i]] = self.color_history[i]
 
-        if self.slots.get(slot) and Color.colors.get(color):
-            history_to_build[slot] = color
+        if self.slots[slot_area]['led'][slot_num] and Color.colors.get(color):
+            history_to_build[slot_name] = color
         return history_to_build
 
     def _history_led_strip_builder(self, slot_history):
@@ -275,12 +258,15 @@ class ArtNetNode(object):
         for universe in self.universe:
             led_strip_dict[universe] = copy.deepcopy(self.universe.get(universe))
         for slot in slot_history:
-            universe = self.slots.get(slot).get('universe')
+            slot_area, slot_num = map(int, str(slot).split('.'))
+            universe = self.slots.get(slot_area).get('universe')
             if universe not in led_strip_dict.keys():
                 led_strip_dict[universe] = copy.deepcopy(self.universe[universe])
 
-            start_led, end_led = self._extract_start_end_led(slot)
-            led_strip_dict[universe] = self._illuminate_from_to(start_led, end_led, led_strip_dict[universe],
+            start_led, end_led = map(int, self.slots[slot_area]['led'][slot_num].split('-'))
+            led_strip_dict[universe] = self._illuminate_from_to(start_led,
+                                                                end_led,
+                                                                led_strip_dict[universe],
                                                                 slot_history[slot])
 
         return led_strip_dict

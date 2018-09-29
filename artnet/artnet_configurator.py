@@ -46,8 +46,7 @@ class ArtNetConfigurator:
                         strip_length = int(config_artnet[node_entry][node_option_key])
                         artnet_node.universe[universe_id] = LEDStrip(strip_length)
                     if node_option_key == 'color_history':
-                        for color in node_option_val.split(','):
-                            artnet_node.color_history.append(color)
+                            artnet_node.color_history = config_artnet[node_entry][node_option_key]
 
                 for mapping_entry in config_led_mapping:
                     if mapping_entry.startswith(artnet_node.name):
@@ -55,8 +54,8 @@ class ArtNetConfigurator:
 
                         for slot_entry in config_led_mapping[mapping_entry]:
                             if slot_entry.startswith('slot_'):
-                                artnet_node.slots.update({slot_entry: {'universe': universe, 'led':
-                                    config_led_mapping[mapping_entry][slot_entry]}})
+                                artnet_node.slots.update({int(slot_entry.split('_')[1]): {'universe': universe,
+                                                                       'led': config_led_mapping[mapping_entry][slot_entry]}})
 
                 artnet_server.art_net_nodes.append(artnet_node)
 
