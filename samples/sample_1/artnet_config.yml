@@ -1,0 +1,13 @@
+artnet_server:
+  ip_address: "192.70.3.10"
+  port: 6454
+
+artnet_node_1:
+  name: "node_1"
+  ip_address: "192.70.3.13"
+  port: 6454
+  universe_1: 98
+  universe_3: 75
+  universe_5: 88
+  color_history: "yellow,orange,red"
+  max_history_size: 5
