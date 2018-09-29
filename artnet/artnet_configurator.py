@@ -1,7 +1,8 @@
 from pathlib import Path
 import yaml
 import re
-import os
+import ipaddress
+
 from .artnet_node import ArtNetNode, LEDStrip
 from .artnet_node_planboard import ArtNetNodePlanboard
 from .artnet_server import ArtNetServer
@@ -9,12 +10,8 @@ from .artnet_server import ArtNetServer
 
 class ArtNetConfigurator:
     """Used for building an ArtNet Server with Nodes"""
-
-    @staticmethod
-    def get_patterns():
-        pat_universe = re.compile('^universe_[0-9]+$')
-        pat_universe_lines = re.compile('^universe_[0-9]+_lines$')
-        return pat_universe, pat_universe_lines
+    pat_universe = re.compile('^universe_[0-9]+$')
+    pat_universe_lines = re.compile('^universe_[0-9]+_lines$')
 
     @staticmethod
     def get_artnet_server(config_artnet=None, config_led_mapping=None):
@@ -28,10 +25,12 @@ class ArtNetConfigurator:
         else:
             raise FileNotFoundError('Please specify a file for config_led_mapping')
 
-        pat_universe, _ = ArtNetConfigurator.get_patterns()
+        broadcast_addr = ipaddress.IPv4Network(config_artnet['artnet_server']['ip_address'] + '/'+
+                                               config_artnet['artnet_server']['netmask'] , False).broadcast_address
 
         artnet_server = ArtNetServer(config_artnet['artnet_server']['ip_address'],
-                                     int(config_artnet['artnet_server']['port']))
+                                     int(config_artnet['artnet_server']['port']),
+                                     str(broadcast_addr))
 
         # Create ArtNet nodes
         for node_entry in config_artnet:
@@ -42,13 +41,12 @@ class ArtNetConfigurator:
                                          int(config_artnet[node_entry]['max_history_size']))
                 artnet_node.universe = {}
                 for (node_option_key, node_option_val) in config_artnet[node_entry].items():
-                    if pat_universe.match(node_option_key):
+                    if ArtNetConfigurator.pat_universe.match(node_option_key):
                         universe_id = node_option_key.split('_')[1]
                         strip_length = int(config_artnet[node_entry][node_option_key])
                         artnet_node.universe[universe_id] = LEDStrip(strip_length)
                     if node_option_key == 'color_history':
-                        for color in node_option_val.split(','):
-                            artnet_node.color_history.append(color)
+                            artnet_node.color_history = config_artnet[node_entry][node_option_key]
 
                 for mapping_entry in config_led_mapping:
                     if mapping_entry.startswith(artnet_node.name):
@@ -56,8 +54,8 @@ class ArtNetConfigurator:
 
                         for slot_entry in config_led_mapping[mapping_entry]:
                             if slot_entry.startswith('slot_'):
-                                artnet_node.slots.update({slot_entry: {'universe': universe, 'led':
-                                    config_led_mapping[mapping_entry][slot_entry]}})
+                                artnet_node.slots.update({int(slot_entry.split('_')[1]): {'universe': universe,
+                                                                       'led': config_led_mapping[mapping_entry][slot_entry]}})
 
                 artnet_server.art_net_nodes.append(artnet_node)
 
@@ -66,7 +64,6 @@ class ArtNetConfigurator:
     @staticmethod
     def get_artnet_server_no_slots():
         """:return: ArtNet Server with nodes from the .yml file"""
-        pat_universe, pat_universe_lines = ArtNetConfigurator.get_patterns()
 
         config = ArtNetConfigurator.get_conf()
         artnet_server = ArtNetServer(config['artnet_server']['ip_address'], int(config['artnet_server']['port']))
@@ -78,14 +75,14 @@ class ArtNetConfigurator:
                                          int(config[node_entry]['port']))
                 artnet_node.universe = {}
                 for (node_option_key, node_option_val) in config.get(node_entry).items():
-                    if pat_universe.match(node_option_key):
+                    if ArtNetConfigurator.pat_universe.match(node_option_key):
                         universe_id = node_option_key.split('_')[1]
                         strip_length = int(config[node_entry][node_option_key])
                         artnet_node.universe[universe_id] = LEDStrip(strip_length)
                     if node_option_key == 'color_history':
                         for color in node_option_val.split(','):
                             artnet_node.color_history.append(color)
-                    if pat_universe_lines.match(node_option_key):
+                    if ArtNetConfigurator.pat_universe_lines.match(node_option_key):
                         universe_id = node_option_key.split('_')[1]
                         artnet_node.universe_to_lines.update({universe_id: config[node_entry][node_option_key]})
 
@@ -100,3 +97,7 @@ class ArtNetConfigurator:
 
         with open(str(config_file_name), 'r') as ymlfile:
             return yaml.load(ymlfile)
+
+    @staticmethod
+    def get_broadcast_addr(ip_address, netmask):
+        return ipaddress.IPv4Network(ip_address + '/' + netmask, False).broadcast_address
