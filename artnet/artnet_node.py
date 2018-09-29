@@ -56,14 +56,13 @@ class ArtNetNode(object):
     def illuminate_multiple_slots_opcua_call(self, parent, slot_name, color):
         """Only use this method for calls from python-opcua"""
         from opcua import ua
-        ret = self.illuminate_multiple_slots(slot_name.Value, color.Value)
-        return [ua.Variant(ret, ua.VariantType.Boolean)]
+        return [ua.Variant(self.illuminate_multiple_slots(slot_name.Value, color.Value), ua.VariantType.Boolean)]
 
     def illuminate_slot(self, slot_name, color, history_to_illu, coll_history):
         """Illuminates a slot and adds it to the illuminated slots history"""
         slot_area, slot_num = map(int, str(slot_name).split('.'))
 
-        if self.slots[slot_area]['led'][slot_num] and Color.colors.get(color):
+        if slot_num in self.slots[slot_area]['led'].keys() and Color.colors.get(color):
             slot_history = self._history_builder(slot_name, color, history_to_illu)
             led_strip_dict = self._history_led_strip_builder(slot_history)
 
@@ -86,8 +85,7 @@ class ArtNetNode(object):
     def illuminate_slot_opcua_call(self, parent, slot_name, color):
         """Only use this method for calls from python-opcua"""
         from opcua import ua
-        ret = self.illuminate_slot(slot_name.Value, color.Value, 0, True)
-        return [ua.Variant(ret, ua.VariantType.Boolean)]
+        return [ua.Variant(self.illuminate_slot(slot_name.Value, color.Value, 0, True), ua.VariantType.Boolean)]
 
     def illuminate_slot_dont_coll_history(self, slot_name, color):
         """Illuminates the given slot but don't add it to the history of illuminated slots"""
@@ -96,36 +94,26 @@ class ArtNetNode(object):
     def illuminate_slot_dont_coll_history_opcua_call(self, parent, slot_name, color):
         """Only use this method for calls from python-opcua"""
         from opcua import ua
-        return [ua.Variant(self.illuminate_slot(slot_name.Value, color.Value, 0, False), ua.VariantType.Boolean)]
+        return [ua.Variant(self.illuminate_slot_dont_coll_history(slot_name.Value,
+                                                                  color.Value), ua.VariantType.Boolean)]
 
     def illuminate_slot_with_history(self, slot_name, color, history_to_illu):
-        self.illuminate_slot(slot_name, color, history_to_illu, True)
+        return self.illuminate_slot(slot_name, color, history_to_illu, True)
 
     def illuminate_slot_with_history_opcua_call(self, parent, slot_name, color, history_to_illu):
         from opcua import ua
-        return [ua.Variant(self.illuminate_slot(slot_name.Value,
+        return [ua.Variant(self.illuminate_slot_with_history(slot_name.Value,
                                                 color.Value,
-                                                history_to_illu.Value,
-                                                True),ua.VariantType.Boolean)]
+                                                history_to_illu.Value), ua.VariantType.Boolean)]
 
-    def illuminate_universe(self, universe, color):
-        if self.universe.get(universe):
-            tmp_led_strip = copy.deepcopy(self.universe.get(universe))
+    def illuminate_universe(self, universe, color_str):
+        color = Color()
+        color.set_color(color_str)
+        return self.illuminate_universe_rgb(universe, color.red, color.green, color.blue)
 
-            for c in tmp_led_strip.led_strip:
-                c.set_color(color)
-
-            self._sequenzer()
-            self.send_queue.append(ArtNetDMXPacket(PacketType.ART_DMX, self.sequence, 0, int(universe),
-                                                   tmp_led_strip.to_byte_array()).packet_to_byte_array())
-            return True
-        else:
-            return False
-
-    def illuminate_universe_opcua_call(self, parent, universe, color):
+    def illuminate_universe_opcua_call(self, parent, universe, color_str):
         from opcua import ua
-        ret = self.illuminate_universe(str(universe.Value), color.Value)
-        return [ua.Variant(ret, ua.VariantType.Boolean)]
+        return [ua.Variant(self.illuminate_universe(str(universe.Value), color_str.Value),ua.VariantType.Boolean)]
 
     def illuminate_universe_rgb(self, universe, red, green, blue):
         if self.universe.get(universe):
@@ -145,8 +133,10 @@ class ArtNetNode(object):
 
     def illuminate_universe_rgb_opcua_call(self, parent, universe, red, green, blue):
         from opcua import ua
-        ret = self.illuminate_universe_rgb(str(universe.Value), red.Value, green.Value, blue.Value)
-        return [ua.Variant(ret, ua.VariantType.Boolean)]
+        return [ua.Variant(self.illuminate_universe_rgb(str(universe.Value),
+                                                        red.Value,
+                                                        green.Value,
+                                                        blue.Value), ua.VariantType.Boolean)]
 
     def illuminate_all(self, color):
         for universe in self.universe:
@@ -161,30 +151,19 @@ class ArtNetNode(object):
 
     def illuminate_all_opcua_call(self, parent, color):
         from opcua import ua
-        ret = self.illuminate_all(color.Value)
-        return [ua.Variant(ret, ua.VariantType.Boolean)]
+        return [ua.Variant(self.illuminate_all(color.Value), ua.VariantType.Boolean)]
 
-    def illuminate_from_to(self, universe, start_led, end_led, color):
-        if self.universe.get(universe) and start_led >= 0:
-            tmp_led_strip = copy.deepcopy(self.universe.get(universe))
+    def illuminate_from_to(self, universe, start_led, end_led, color_str):
+        color = Color()
+        color.set_color(color_str)
+        return self.illuminate_from_to_rgb(universe, start_led, end_led, color.red, color.green, color.blue)
 
-            if end_led < len(tmp_led_strip.led_strip):
-                for i in range(start_led, end_led + 1, 1):
-                    tmp_led_strip.led_strip[i].set_color(color)
-
-                self._sequenzer()
-                self.send_queue.append(ArtNetDMXPacket(PacketType.ART_DMX, self.sequence, 0, int(universe),
-                                                       tmp_led_strip.to_byte_array()).packet_to_byte_array())
-                return True
-            else:
-                return False
-        else:
-            return False
-
-    def illuminate_from_to_opcua_call(self, parent, universe, start_led, end_led, color):
+    def illuminate_from_to_opcua_call(self, parent, universe, start_led, end_led, color_str):
         from opcua import ua
-        ret = self.illuminate_from_to(str(universe.Value), start_led.Value, end_led.Value, color.Value)
-        return [ua.Variant(ret, ua.VariantType.Boolean)]
+        return [ua.Variant(self.illuminate_from_to(str(universe.Value),
+                                                   start_led.Value,
+                                                   end_led.Value,
+                                                   color_str.Value), ua.VariantType.Boolean)]
 
     def illuminate_from_to_rgb(self, universe, start_led, end_led, red, green, blue):
         if self.universe.get(universe) and start_led >= 0:
@@ -207,9 +186,12 @@ class ArtNetNode(object):
 
     def illuminate_from_to_rgb_opcua_call(self, parent, universe, start_led, end_led, red, green, blue):
         from opcua import ua
-        ret = self.illuminate_from_to_rgb(str(universe.Value), start_led.Value, end_led.Value,
-                                          red.Value, green.Value, blue.Value)
-        return [ua.Variant(ret, ua.VariantType.Boolean)]
+        return [ua.Variant(self.illuminate_from_to_rgb(str(universe.Value),
+                                                       start_led.Value,
+                                                       end_led.Value,
+                                                       red.Value,
+                                                       green.Value,
+                                                       blue.Value), ua.VariantType.Boolean)]
 
     def all_off(self):
         for universe in self.universe:
@@ -222,8 +204,7 @@ class ArtNetNode(object):
 
     def all_off_opcua_call(self, parent):
         from opcua import ua
-        ret = self.all_off()
-        return [ua.Variant(ret, ua.VariantType.Boolean)]
+        return [ua.Variant(self.all_off(), ua.VariantType.Boolean)]
 
     def _illuminate_from_to(self, start_led, end_led, led_strip, color):
         """Illuminates leds from start to end with given color and returns a LEDStrip"""
