@@ -96,7 +96,7 @@ class ArtNetConfigurator:
     @staticmethod
     def get_conf(config_file_name=None):
         if not config_file_name:
-            config_file_name = Path(__file__).absolute().parents[2] / "conf" / "art_net.yml"
+            config_file_name = Path(__file__).absolute().parents[2] / "conf" / "artnet.yml"
 
         with open(str(config_file_name), 'r') as ymlfile:
             return yaml.load(ymlfile)

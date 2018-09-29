@@ -1,7 +1,7 @@
 from time import sleep
 import os
 import sys
-from art_net.artnet_configurator import ArtNetConfigurator
+from artnet.artnet_configurator import ArtNetConfigurator
 
 sleep_time = 2
 thread_list = []
