@@ -1,5 +1,6 @@
 artnet_server:
   ip_address: "192.70.3.10"
+  netmask: "255.255.255.0"
   port: 6454
 
 artnet_node_1:

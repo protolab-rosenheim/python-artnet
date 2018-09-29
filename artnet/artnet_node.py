@@ -1,6 +1,7 @@
+import copy
+from datetime import datetime
 from .color import Color
 from .packets import PacketType, ArtNetDMXPacket
-import copy
 
 
 class ArtNetNode(object):
@@ -25,7 +26,7 @@ class ArtNetNode(object):
             raise ValueError("Only values between 0-65535 are valid for ports")
         self.port = port
 
-        self.device_online = False
+        self.device_last_seen = datetime.min
         self.slot_history = []
         if max_history_size not in range(101):
             raise ValueError("Only values between 0-100 are valid for history size")
