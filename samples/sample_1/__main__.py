@@ -23,8 +23,7 @@ while artnet_server.thread.isAlive():
         print('red')
         sleep(sleep_time)
 
-        print(artnet_server.art_net_nodes[0].illuminate_slot('3.1', 'red', 0, False))
-        #print(artnet_server.art_net_nodes[0].illuminate_slot_dont_coll_history('3.1', 'red'))
+        artnet_server.art_net_nodes[0].illuminate_slot('3.1', 'red', 0, False)
         print('partly red')
         sleep(sleep_time)
 
