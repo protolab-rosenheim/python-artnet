@@ -1,5 +1,7 @@
 import copy
 from datetime import datetime
+from collections import deque
+
 from .color import Color
 from .packets import PacketType, ArtNetDMXPacket
 
@@ -20,7 +22,7 @@ class ArtNetNode(object):
         self.universe = {}
         # Contains a dict with slots. E.g.: {slot_1: {universe: 1, led: 0-3}, slot_2: {universe: 1, led: 4-6}}
         self.slots = {}
-        self.send_queue = []
+        self.send_queue = deque()
         self.sequence = 1
         if port not in range(65536):
             raise ValueError("Only values between 0-65535 are valid for ports")

@@ -48,7 +48,7 @@ class ArtNetServer:
 
                 for node in self.art_net_nodes:
                     if node.send_queue:
-                        packet = node.send_queue.pop()
+                        packet = node.send_queue.popleft()
                         server_socket.sendto(packet, (node.ip_address, node.port))
                         server_socket.sendto(packet, (node.ip_address, node.port))
 
