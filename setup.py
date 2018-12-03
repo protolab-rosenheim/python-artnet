@@ -11,7 +11,7 @@ packages = ['artnet']
 
 setup(
     name='python-artnet',
-    version='0.1.0',
+    version='0.1.1',
     description='ArtNet lib, proto_lab',
     long_description=readme,
     author='proto_lab',
