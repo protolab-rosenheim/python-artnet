@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/protolab-rosenheim/python-artnet.svg?branch=master)](https://travis-ci.org/protolab-rosenheim/python-artnet)
+
 # python-artnet #
 Python library for communication with Art Net devices.
 
