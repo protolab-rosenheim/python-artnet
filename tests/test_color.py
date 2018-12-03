@@ -9,9 +9,9 @@ class TestColor(TestCase):
         self.assertEqual(col.green, 255)
         self.assertEqual(col.blue, 255)
 
-        col.set_color("orange")  # orange: [50, 25, 0]
-        self.assertEqual(col.red, 50)
-        self.assertEqual(col.green, 25)
+        col.set_color("orange")  # orange: [51, 10, 0]
+        self.assertEqual(col.red, 51)
+        self.assertEqual(col.green, 10)
         self.assertEqual(col.blue, 0)
 
     def test_value_error(self):
