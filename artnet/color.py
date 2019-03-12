@@ -2,9 +2,11 @@ class Color:
     colors = {'black': [0, 0, 0], 'blue': [0, 0, 50], 'cyan': [0, 50, 50], 'green': [0, 50, 0], 'magenta': [50, 0, 50],
               'orange': [51, 10, 0], 'pink': [50, 0, 20], 'red': [50, 0, 0], 'yellow': [51, 34, 0],
               'white': [50, 50, 50]}
-    colors_hex = {'#000000': [0, 0, 0], '#0000FF': [0, 0, 50], '#00FFFF':  [0, 50, 50], '#00FF00': [0, 50, 0], '#FF00FF': [50, 0, 50],
-                 '#FF8300': [51, 10, 0], '#FF0096': [50, 0, 20], '#FF0000': [50, 0, 0], '#FFFF00': [51, 34, 0],
-                 '#FFFFFF': [50, 50, 50]}
+    colors_hex = {'#000000': [0, 0, 0], '#0000FF': [0, 0, 50], '#00FFFF':  [0, 50, 50], '#00FF00': [0, 50, 0],
+                  '#FF00FF': [50, 0, 50], '#FF8300': [51, 10, 0], '#FF0096': [50, 0, 20], '#FF0000': [50, 0, 0],
+                  '#FFFF00': [51, 34, 0], '#FFFFFF': [50, 50, 50]}
+
+    colors_hex_dimly = {'#008000': [2, 15, 0], '#FF0000': [15, 0, 0], '#0000FF': [0, 4, 15], '#FFFF00': [12, 12, 0]}
 
     def __init__(self, red=0, green=0, blue=0):
         if red not in range(256):
@@ -35,8 +37,11 @@ class Color:
     def __ne__(self, other):
         return not self.__eq__(other)
 
-    def set_color(self, color='red'):
+    def set_color(self, color='red', dimly=False):
         if color.startswith('#'):
-            self.red, self.green, self.blue = self.colors_hex[color]
+            if dimly:
+                self.red, self.green, self.blue = self.colors_hex_dimly[color]
+            else:
+                self.red, self.green, self.blue = self.colors_hex[color]
         else:
             self.red, self.green, self.blue = self.colors[color]

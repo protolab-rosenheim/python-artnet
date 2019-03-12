@@ -26,7 +26,7 @@ class ArtNetNodePlanboard(ArtNetNode):
                 if not board_coordinates[counter]['led_color']:
                     color.set_color('black')
                 else:
-                    color.set_color(board_coordinates[counter]['led_color'])
+                    color.set_color(board_coordinates[counter]['led_color'], True)
 
             self.send_queue.append(ArtNetDMXPacket(PacketType.ART_DMX,
                                                    self.sequence,
