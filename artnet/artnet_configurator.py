@@ -62,17 +62,17 @@ class ArtNetConfigurator:
         return artnet_server
 
     @staticmethod
-    def get_artnet_server_no_slots():
+    def get_artnet_server_no_slots(config_artnet=None):
         """:return: ArtNet Server with nodes from the .yml file"""
 
-        config = ArtNetConfigurator.get_conf()
+        config = ArtNetConfigurator.get_conf(config_artnet)
         artnet_server = ArtNetServer(config['artnet_server']['ip_address'], int(config['artnet_server']['port']))
 
         # Create ArtNet nodes
         for node_entry in config.keys():
             if node_entry.startswith('artnet_node_'):
                 artnet_node = ArtNetNodePlanboard(config[node_entry]['name'], config[node_entry]['ip_address'],
-                                         int(config[node_entry]['port']))
+                                                  int(config[node_entry]['port']))
                 artnet_node.universe = {}
                 for (node_option_key, node_option_val) in config.get(node_entry).items():
                     if ArtNetConfigurator.pat_universe.match(node_option_key):
