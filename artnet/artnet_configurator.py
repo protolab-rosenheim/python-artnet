@@ -25,12 +25,9 @@ class ArtNetConfigurator:
         else:
             raise FileNotFoundError('Please specify a file for config_led_mapping')
 
-        broadcast_addr = ipaddress.IPv4Network(config_artnet['artnet_server']['ip_address'] + '/'+
-                                               config_artnet['artnet_server']['netmask'] , False).broadcast_address
-
         artnet_server = ArtNetServer(config_artnet['artnet_server']['ip_address'],
-                                     int(config_artnet['artnet_server']['port']),
-                                     str(broadcast_addr))
+                                     ArtNetConfigurator.get_broadcast_addr(config_artnet),
+                                     int(config_artnet['artnet_server']['port']))
 
         # Create ArtNet nodes
         for node_entry in config_artnet:
@@ -66,7 +63,9 @@ class ArtNetConfigurator:
         """:return: ArtNet Server with nodes from the .yml file"""
 
         config = ArtNetConfigurator.get_conf(config_artnet)
-        artnet_server = ArtNetServer(config['artnet_server']['ip_address'], int(config['artnet_server']['port']))
+        artnet_server = ArtNetServer(config['artnet_server']['ip_address'],
+                                     ArtNetConfigurator.get_broadcast_addr(config_artnet),
+                                     int(config['artnet_server']['port']))
 
         # Create ArtNet nodes
         for node_entry in config.keys():
@@ -96,8 +95,9 @@ class ArtNetConfigurator:
             config_file_name = Path(__file__).absolute().parents[2] / "conf" / "artnet.yml"
 
         with open(str(config_file_name), 'r') as ymlfile:
-            return yaml.load(ymlfile)
+            return yaml.safe_load(ymlfile)
 
     @staticmethod
-    def get_broadcast_addr(ip_address, netmask):
-        return ipaddress.IPv4Network(ip_address + '/' + netmask, False).broadcast_address
+    def get_broadcast_addr(config_artnet):
+        return str(ipaddress.IPv4Network(config_artnet['artnet_server']['ip_address'] + '/' +
+                                         config_artnet['artnet_server']['netmask'], False).broadcast_address)
