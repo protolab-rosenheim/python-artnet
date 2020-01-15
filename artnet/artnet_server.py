@@ -1,3 +1,4 @@
+import platform
 from threading import Thread
 import socket
 from queue import Queue
@@ -8,20 +9,20 @@ from datetime import datetime
 class ArtNetServer:
     """Sends and receives ArtNet packets"""
 
-    def __init__(self, host='',  port=6454, broadcast_addr=None):
+    def __init__(self, ip, broadcast_addr, port=6454):
         self.thread_run_ok = True
         self.send_queue = Queue()
         self.thread = Thread(target=self.server, args=())
-        self.host = host
+        self.ip = ip
+        self.broadcast_addr = broadcast_addr
         self.art_net_nodes = []
 
         if port not in range(65536):
             raise ValueError('Only values between 0-65535 are valid for ports')
         self.port = port
 
-        self.broadcast_addr = broadcast_addr
-        if not self.broadcast_addr:
-            self.broadcast_addr = self.host
+        if platform.system() == 'Windows':
+            self.broadcast_addr = self.ip
 
     def server(self):
         try:
