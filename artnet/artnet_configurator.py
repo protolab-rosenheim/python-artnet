@@ -95,7 +95,7 @@ class ArtNetConfigurator:
             config_file_name = Path(__file__).absolute().parents[2] / "conf" / "artnet.yml"
 
         with open(str(config_file_name), 'r') as ymlfile:
-            return yaml.load(ymlfile)
+            return yaml.safe_load(ymlfile)
 
     @staticmethod
     def get_broadcast_addr(config_artnet):
