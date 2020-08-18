@@ -35,6 +35,15 @@ class ArtNetNode(object):
         self._max_history_size = max_history_size
         self.color_history = []
 
+    def flush_slot_history(self):
+        self.slot_history = []
+
+    def flush_slot_history_opcua_call(self, parent):
+        """Only use this method for calls from python-opcua"""
+        from opcua import ua
+        self.flush_slot_history()
+        return [ua.Variant(True, ua.VariantType.Boolean)]
+
     def illuminate_multiple_slots(self, slots, color):
         """Illuminate multiple slots, in one color, don't add them to illuminated history. Slots delimiter is ';'"""
         slot_color = {}
