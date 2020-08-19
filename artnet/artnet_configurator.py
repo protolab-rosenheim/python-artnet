@@ -6,6 +6,7 @@ import ipaddress
 from .artnet_node import ArtNetNode, LEDStrip
 from .artnet_node_planboard import ArtNetNodePlanboard
 from .artnet_server import ArtNetServer
+from .models import Slot
 
 
 class ArtNetConfigurator:
@@ -43,17 +44,27 @@ class ArtNetConfigurator:
                         strip_length = int(config_artnet[node_entry][node_option_key])
                         artnet_node.universe[universe_id] = LEDStrip(strip_length)
                     if node_option_key == 'color_history':
-                            artnet_node.color_history = config_artnet[node_entry][node_option_key]
+                        artnet_node.color_history = config_artnet[node_entry][node_option_key]
 
                 for mapping_entry in config_led_mapping:
                     if mapping_entry.startswith(artnet_node.name):
-                        universe = config_led_mapping[mapping_entry]['universe']
+                        universe = str(config_led_mapping[mapping_entry]['universe'])
 
                         for slot_entry in config_led_mapping[mapping_entry]:
-                            if slot_entry.startswith('slot_'):
-                                artnet_node.slots.update({int(slot_entry.split('_')[1]): {'universe': universe,
-                                                                       'led': config_led_mapping[mapping_entry][slot_entry]}})
-
+                            if not slot_entry.startswith('slot_'):
+                                continue
+                                # artnet_node.slots.update({int(slot_entry.split('_')[1]): {'universe': universe,
+                                #                                        'led': config_led_mapping[mapping_entry][slot_entry]}})
+                            for sub_slot in config_led_mapping[mapping_entry][slot_entry]:
+                                start, end = config_led_mapping[mapping_entry][slot_entry][sub_slot].split('-')
+                                slot_name = slot_entry.split('_')[1] + '.' + str(sub_slot)
+                                if slot_name in artnet_node.slots:
+                                    artnet_node.slots[slot_name].universe.append(str(universe))
+                                    artnet_node.slots[slot_name].start.append(int(start))
+                                    artnet_node.slots[slot_name].end.append(int(end))
+                                else:
+                                    artnet_node.slots.update(
+                                        {slot_name: Slot([str(universe)], [int(start)], [int(end)], slot_name)})
                 artnet_server.art_net_nodes.append(artnet_node)
 
         return artnet_server

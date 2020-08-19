@@ -16,6 +16,7 @@ class ArtNetServer:
         self.ip = ip
         self.broadcast_addr = broadcast_addr
         self.art_net_nodes = []
+        self.max_send_packets_in_a_row = 15
 
         if port not in range(65536):
             raise ValueError('Only values between 0-65535 are valid for ports')
@@ -48,10 +49,14 @@ class ArtNetServer:
                         logging.error('ArtNet Server error: {}').format(e)
 
                 for node in self.art_net_nodes:
-                    if node.send_queue:
+                    max_packet_row_counter = 0
+                    while node.send_queue:
+                        max_packet_row_counter += 1
                         packet = node.send_queue.popleft()
                         server_socket.sendto(packet, (node.ip_address, node.port))
                         server_socket.sendto(packet, (node.ip_address, node.port))
+                        if max_packet_row_counter >= self.max_send_packets_in_a_row:
+                            break
 
             server_socket.close()
 
