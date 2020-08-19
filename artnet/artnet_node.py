@@ -41,7 +41,7 @@ class ArtNetNode(object):
 
     def flush_slot_history_opcua_call(self, parent):
         """Only use this method for calls from python-opcua"""
-        from asyncua import ua
+        from opcua import ua
         self.flush_slot_history()
         return [ua.Variant(True, ua.VariantType.Boolean)]
 
@@ -72,7 +72,7 @@ class ArtNetNode(object):
 
     def illuminate_multiple_slots_opcua_call(self, parent, slot_name, color):
         """Only use this method for calls from python-opcua"""
-        from asyncua import ua
+        from opcua import ua
         return [ua.Variant(self.illuminate_multiple_slots(slot_name.Value, color.Value), ua.VariantType.Boolean)]
 
     def illuminate_slot(self, slot_name: str, color: str, history_to_illu: int, coll_history: bool) -> bool:
@@ -101,7 +101,7 @@ class ArtNetNode(object):
 
     def illuminate_slot_opcua_call(self, parent, slot_name, color):
         """Only use this method for calls from python-opcua"""
-        from asyncua import ua
+        from opcua import ua
         return [ua.Variant(self.illuminate_slot(slot_name.Value, color.Value, 0, True), ua.VariantType.Boolean)]
 
     def illuminate_slot_dont_coll_history(self, slot_name, color):
@@ -110,7 +110,7 @@ class ArtNetNode(object):
 
     def illuminate_slot_dont_coll_history_opcua_call(self, parent, slot_name, color):
         """Only use this method for calls from python-opcua"""
-        from asyncua import ua
+        from opcua import ua
         return [ua.Variant(self.illuminate_slot_dont_coll_history(slot_name.Value,
                                                                   color.Value), ua.VariantType.Boolean)]
 
@@ -118,7 +118,7 @@ class ArtNetNode(object):
         return self.illuminate_slot(slot_name, color, history_to_illu, True)
 
     def illuminate_slot_with_history_opcua_call(self, parent, slot_name, color, history_to_illu):
-        from asyncua import ua
+        from opcua import ua
         return [ua.Variant(self.illuminate_slot_with_history(slot_name.Value,
                                                              color.Value,
                                                              history_to_illu.Value), ua.VariantType.Boolean)]
@@ -132,7 +132,7 @@ class ArtNetNode(object):
             return False
 
     def illuminate_universe_opcua_call(self, parent, universe, color_str):
-        from asyncua import ua
+        from opcua import ua
         return [ua.Variant(self.illuminate_universe(str(universe.Value), color_str.Value), ua.VariantType.Boolean)]
 
     def illuminate_universe_rgb(self, universe, red, green, blue):
@@ -150,7 +150,7 @@ class ArtNetNode(object):
             return False
 
     def illuminate_universe_rgb_opcua_call(self, parent, universe, red, green, blue):
-        from asyncua import ua
+        from opcua import ua
         return [ua.Variant(self.illuminate_universe_rgb(str(universe.Value),
                                                         red.Value,
                                                         green.Value,
@@ -169,7 +169,7 @@ class ArtNetNode(object):
             return False
 
     def illuminate_all_opcua_call(self, parent, color):
-        from asyncua import ua
+        from opcua import ua
         return [ua.Variant(self.illuminate_all(color.Value), ua.VariantType.Boolean)]
 
     def illuminate_from_to(self, universe, start_led, end_led, color_str):
@@ -181,7 +181,7 @@ class ArtNetNode(object):
             return False
 
     def illuminate_from_to_opcua_call(self, parent, universe, start_led, end_led, color_str):
-        from asyncua import ua
+        from opcua import ua
         return [ua.Variant(self.illuminate_from_to(str(universe.Value),
                                                    start_led.Value,
                                                    end_led.Value,
@@ -205,7 +205,7 @@ class ArtNetNode(object):
             return False
 
     def illuminate_from_to_rgb_opcua_call(self, parent, universe, start_led, end_led, red, green, blue):
-        from asyncua import ua
+        from opcua import ua
         return [ua.Variant(self.illuminate_from_to_rgb(str(universe.Value),
                                                        start_led.Value,
                                                        end_led.Value,
@@ -221,7 +221,7 @@ class ArtNetNode(object):
         return True
 
     def all_off_opcua_call(self, parent):
-        from asyncua import ua
+        from opcua import ua
         return [ua.Variant(self.all_off(), ua.VariantType.Boolean)]
 
     def _illuminate_from_to(self, start_led, end_led, led_strip, color):
